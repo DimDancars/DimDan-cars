@@ -73,7 +73,7 @@ function buildCarCard(cn) {
   return `<div class="car-card">
     <div class="car-header" onclick="toggleCar(this)">
       <div><div class="car-name">${cn}</div>
-        <div style="font-size:12px;color:#9ca3af;margin-top:2px">${c.n} mes(es) com receita</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px">${c.n === 1 ? '1 mÃªs com receita' : c.n + ' meses com receita'}</div>
         <div class="progress-bar-wrap"><div class="progress-bar" style="width:${Math.max(pct,2)}%"></div></div>
       </div>
       <div style="text-align:right">
@@ -330,3 +330,33 @@ function showSubTab(tab){
   document.querySelectorAll('.stab').forEach((t,i)=>{t.className='stab'+(['receita','manut'][i]===tab?' active':'');});
   if(tab==='manut')renderManutList();
 }
+
+// â”€â”€ LIVE SYNC â€” atualiza investidor em tempo real â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function refreshCurrentView() {
+  if (!currentUser) return;
+  const user = USERS[currentUser];
+  if (!user) return;
+  if (user.role === 'investor') {
+    // Re-render investor stats and cars without changing screen
+    let ti=0, tl=0;
+    user.cars.forEach(cn => { const c=calcCar(cn); if(c){ti+=c.invested;tl+=c.liquida;} });
+    const roi = ti>0 ? tl/ti : 0;
+    const statsEl = document.getElementById('inv-stats');
+    const carsEl  = document.getElementById('inv-cars');
+    if (statsEl) statsEl.innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total investido</div><div class="stat-val blue">${fmt(ti)}</div></div>
+      <div class="stat-card"><div class="stat-label">Retorno lÃ­quido</div><div class="stat-val ${tl>=0?'green':'red'}">${fmt(tl)}</div></div>
+      <div class="stat-card"><div class="stat-label">ROI acumulado</div><div class="stat-val ${roi>=0?'green':'red'}">${fmtPct(roi)}</div></div>`;
+    if (carsEl) carsEl.innerHTML = user.cars.map(buildCarCard).join('');
+  }
+}
+
+// Patch all data-changing functions to also call refreshCurrentView
+const _lancarReceita = lancarReceita;
+lancarReceita = function() { _lancarReceita(); refreshCurrentView(); };
+const _lancarManut = lancarManut;
+lancarManut = function() { _lancarManut(); refreshCurrentView(); };
+const _saveEditManut = saveEditManut;
+saveEditManut = function(cn,ym,idx,i) { _saveEditManut(cn,ym,idx,i); refreshCurrentView(); };
+const _deleteManut = deleteManut;
+deleteManut = function(cn,ym,idx) { _deleteManut(cn,ym,idx); refreshCurrentView(); };

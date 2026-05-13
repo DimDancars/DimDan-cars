@@ -63,16 +63,43 @@ function startRealtimeSync() {
   }, 5000);
 }
 
+function getOpenCards(containerId) {
+  const open = [];
+  const container = document.getElementById(containerId);
+  if (!container) return open;
+  container.querySelectorAll('.car-body.open').forEach(body => {
+    const header = body.previousElementSibling;
+    const name = header ? header.querySelector('.car-name') : null;
+    if (name) open.push(name.textContent);
+  });
+  return open;
+}
+
+function restoreOpenCards(containerId, openNames) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll('.car-card').forEach(card => {
+    const name = card.querySelector('.car-name');
+    if (name && openNames.includes(name.textContent)) {
+      card.querySelector('.car-body').classList.add('open');
+    }
+  });
+}
+
 function refreshCurrentView() {
   if (!currentUser) return;
   const user = STATE.users.find(u => u.username === currentUser);
   if (!user) return;
   if (user.role === 'investor') {
+    const openCards = getOpenCards('inv-cars');
     renderInvestorStats(user);
     document.getElementById('inv-cars').innerHTML = user.cars.map(buildCarCard).join('');
+    restoreOpenCards('inv-cars', openCards);
   } else if (user.role === 'admin') {
+    const openCards = getOpenCards('admin-cars');
     renderAdminStats();
     renderAdminCars();
+    restoreOpenCards('admin-cars', openCards);
   }
 }
 

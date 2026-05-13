@@ -42,6 +42,7 @@ async function sbDelete(table, params) {
 let currentRole = 'investor';
 let currentUser = null;
 let STATE = { cars: [], months: [], maintenances: [], users: [] };
+let openCarNames = new Set();
 
 // â”€â”€ LOAD ALL DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadAll() {
@@ -60,7 +61,7 @@ function startRealtimeSync() {
   setInterval(async () => {
     await loadAll();
     refreshCurrentView();
-  }, 5000);
+  }, 30000);
 }
 
 function getOpenCards(containerId) {
@@ -75,12 +76,12 @@ function getOpenCards(containerId) {
   return open;
 }
 
-function restoreOpenCards(containerId, openNames) {
+function restoreOpenCards(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.querySelectorAll('.car-card').forEach(card => {
     const name = card.querySelector('.car-name');
-    if (name && openNames.includes(name.textContent)) {
+    if (name && openCarNames.has(name.textContent)) {
       card.querySelector('.car-body').classList.add('open');
     }
   });
@@ -91,15 +92,13 @@ function refreshCurrentView() {
   const user = STATE.users.find(u => u.username === currentUser);
   if (!user) return;
   if (user.role === 'investor') {
-    const openCards = getOpenCards('inv-cars');
     renderInvestorStats(user);
     document.getElementById('inv-cars').innerHTML = user.cars.map(buildCarCard).join('');
-    restoreOpenCards('inv-cars', openCards);
+    restoreOpenCards('inv-cars');
   } else if (user.role === 'admin') {
-    const openCards = getOpenCards('admin-cars');
     renderAdminStats();
     renderAdminCars();
-    restoreOpenCards('admin-cars', openCards);
+    restoreOpenCards('admin-cars');
   }
 }
 
@@ -466,7 +465,17 @@ function populateSelects() {
   renderManutList();
 }
 
-function toggleCar(header) { header.nextElementSibling.classList.toggle('open'); }
+function toggleCar(header) {
+  const body = header.nextElementSibling;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open');
+  // Store open state in dataset
+  const carName = header.querySelector('.car-name');
+  if (carName) {
+    if (!isOpen) openCarNames.add(carName.textContent);
+    else openCarNames.delete(carName.textContent);
+  }
+}
 
 function showAdminTab(tab) {
   const ids = ['visao','lancar','usuarios'];

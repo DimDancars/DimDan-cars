@@ -1,18 +1,12 @@
-// â”€â”€ CONFIG SUPABASE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SUPABASE_URL = 'https://lzhkrpkncvgwzndlnace.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_V4OXaYjJ2xdn6G-CrkNcQQ_sTz28PXH';
 
-async function db(table) {
-  return `${SUPABASE_URL}/rest/v1/${table}`;
-}
-
-async function sbGet(table, params = '') {
+async function sbGet(table, params='') {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
-    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
   });
   return r.json();
 }
-
 async function sbPost(table, body) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
     method: 'POST',
@@ -21,7 +15,6 @@ async function sbPost(table, body) {
   });
   return r.json();
 }
-
 async function sbPatch(table, params, body) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
     method: 'PATCH',
@@ -30,7 +23,6 @@ async function sbPatch(table, params, body) {
   });
   return r.json();
 }
-
 async function sbDelete(table, params) {
   await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
     method: 'DELETE',
@@ -38,13 +30,11 @@ async function sbDelete(table, params) {
   });
 }
 
-// â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let currentRole = 'investor';
 let currentUser = null;
-let STATE = { cars: [], months: [], maintenances: [], users: [] };
 let openCarNames = new Set();
+let STATE = { cars: [], months: [], maintenances: [], users: [] };
 
-// â”€â”€ LOAD ALL DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadAll() {
   const [cars, months, maintenances, users] = await Promise.all([
     sbGet('cars', 'order=name'),
@@ -55,25 +45,11 @@ async function loadAll() {
   STATE = { cars, months, maintenances, users };
 }
 
-// â”€â”€ REALTIME SYNC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function startRealtimeSync() {
-  // Poll every 5 seconds and refresh current view
   setInterval(async () => {
     await loadAll();
     refreshCurrentView();
   }, 30000);
-}
-
-function getOpenCards(containerId) {
-  const open = [];
-  const container = document.getElementById(containerId);
-  if (!container) return open;
-  container.querySelectorAll('.car-body.open').forEach(body => {
-    const header = body.previousElementSibling;
-    const name = header ? header.querySelector('.car-name') : null;
-    if (name) open.push(name.textContent);
-  });
-  return open;
 }
 
 function restoreOpenCards(containerId) {
@@ -102,19 +78,10 @@ function refreshCurrentView() {
   }
 }
 
-// â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MN = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function mlabel(ym) { const [y,m] = ym.split('-'); return MN[parseInt(m)-1]+'/'+y; }
 function fmt(v) { return '$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtPct(v) { return (v*100).toFixed(1)+'%'; }
-
-function getMonthLiq(carName, month) {
-  const mo = STATE.months.find(m => m.car_name === carName && m.month === month);
-  if (!mo) return 0;
-  const manuts = STATE.maintenances.filter(m => m.car_name === carName && m.month === month);
-  const totalManut = manuts.reduce((s,x) => s+x.value, 0);
-  return mo.bruto - (mo.bruto * 0.25) - 52 - 7.75 - totalManut;
-}
 
 function calcCar(carName) {
   const car = STATE.cars.find(c => c.name === carName);
@@ -132,138 +99,111 @@ function calcCar(carName) {
   return { invested: car.invested, totalBruto, adm, seg, rast, totalManut, liquida, roi, n, carMonths, carManuts };
 }
 
-// â”€â”€ BUILD CAR CARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function buildCarCard(carName) {
   const c = calcCar(carName);
   if (!c) return '';
-  const pct = c.invested > 0 ? Math.min(Math.max(c.liquida / c.invested * 100, 0), 100) : 0;
-
+  const pct = c.invested > 0 ? Math.min(Math.max(c.liquida/c.invested*100, 0), 100) : 0;
   const monthRows = c.carMonths.map(mo => {
     const manuts = STATE.maintenances.filter(m => m.car_name === carName && m.month === mo.month);
     const totalManut = manuts.reduce((s,x) => s+x.value, 0);
     const liq = mo.bruto - (mo.bruto*0.25) - 52 - 7.75 - totalManut;
     const adm_m = mo.bruto * 0.25;
-    const manutHtml = manuts.length > 0 ? `
-      <div class="manut-block">
-        ${manuts.map(x => `
-          <div class="manut-item">
-            <span class="mi-left"><i class="ti ti-tool"></i> ${x.description}</span>
-            <span class="mi-val">-${fmt(x.value)}</span>
-          </div>`).join('')}
-      </div>` : '';
-    return `
-      <div class="month-entry">
-        <div class="month-top">
-          <span class="month-label-text">${mlabel(mo.month)}</span>
-          <span class="month-liq" style="color:${liq>=0?'#15803d':'#dc2626'}">${liq>=0?'':'-'}${fmt(liq)} lÃ­q.</span>
-        </div>
-        <div class="mline"><span class="ml">Receita bruta</span><span class="mv">${fmt(mo.bruto)}</span></div>
-        <div class="mline"><span class="ml">(-) GestÃ£o 25%</span><span class="mv neg">-${fmt(adm_m)}</span></div>
-        <div class="mline"><span class="ml">(-) Seguro</span><span class="mv neg">-$52.00</span></div>
-        <div class="mline"><span class="ml">(-) Rastreador</span><span class="mv neg">-$7.75</span></div>
-        ${manutHtml}
-      </div>`;
+    const manutHtml = manuts.length > 0 ? `<div class="manut-block">${manuts.map(x=>`
+      <div class="manut-item"><span class="mi-left"><i class="ti ti-tool"></i> ${x.description}</span><span class="mi-val">-${fmt(x.value)}</span></div>`).join('')}</div>` : '';
+    return `<div class="month-entry">
+      <div class="month-top"><span class="month-label-text">${mlabel(mo.month)}</span><span class="month-liq" style="color:${liq>=0?'#15803d':'#dc2626'}">${liq>=0?'':'-'}${fmt(liq)} lÃ­q.</span></div>
+      <div class="mline"><span class="ml">Receita bruta</span><span class="mv">${fmt(mo.bruto)}</span></div>
+      <div class="mline"><span class="ml">(-) GestÃ£o 25%</span><span class="mv neg">-${fmt(adm_m)}</span></div>
+      <div class="mline"><span class="ml">(-) Seguro</span><span class="mv neg">-$52.00</span></div>
+      <div class="mline"><span class="ml">(-) Rastreador</span><span class="mv neg">-$7.75</span></div>
+      ${manutHtml}</div>`;
   }).join('');
-
-  return `
-    <div class="car-card">
-      <div class="car-header" onclick="toggleCar(this)">
-        <div>
-          <div class="car-name">${carName}</div>
-          <div style="font-size:12px;color:#9ca3af;margin-top:2px">${c.n === 1 ? '1 mÃªs com receita' : c.n + ' meses com receita'}</div>
-          <div class="progress-bar-wrap"><div class="progress-bar" style="width:${Math.max(pct,2)}%"></div></div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:20px;font-weight:500;color:${c.roi>=0?'#15803d':'#dc2626'};font-family:'DM Mono',monospace">${c.roi!==null?fmtPct(c.roi):'N/A'}</div>
-          <div style="font-size:11px;color:#9ca3af">ROI</div>
-          <i class="ti ti-chevron-down" style="font-size:16px;color:#9ca3af;margin-top:4px"></i>
-        </div>
+  return `<div class="car-card">
+    <div class="car-header" onclick="toggleCar(this)">
+      <div><div class="car-name">${carName}</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px">${c.n===1?'1 mÃªs com receita':c.n+' meses com receita'}</div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:${Math.max(pct,2)}%"></div></div>
       </div>
-      <div class="car-body">
-        <div class="detail-section">
-          <div class="detail-section-title">Resumo acumulado</div>
-          <div class="drow"><span class="dlabel">Valor investido</span><span class="dval blue">${fmt(c.invested)}</span></div>
-          <div class="drow"><span class="dlabel">Receita bruta total</span><span class="dval">${fmt(c.totalBruto)}</span></div>
-          <div class="drow"><span class="dlabel">(-) GestÃ£o de frota 25%</span><span class="dval neg">-${fmt(c.adm)}</span></div>
-          <div class="drow"><span class="dlabel">(-) Seguro (${c.n} Ã— $52.00)</span><span class="dval neg">-${fmt(c.seg)}</span></div>
-          <div class="drow"><span class="dlabel">(-) Rastreador (${c.n} Ã— $7.75)</span><span class="dval neg">-${fmt(c.rast)}</span></div>
-          ${c.totalManut>0?`<div class="drow"><span class="dlabel">(-) ManutenÃ§Ãµes</span><span class="dval neg">-${fmt(c.totalManut)}</span></div>`:''}
-          <div class="drow total-row"><span class="dlabel">Retorno lÃ­quido total</span><span class="dval ${c.liquida>=0?'pos':'neg'}">${c.liquida>=0?'':'-'}${fmt(c.liquida)}</span></div>
-        </div>
-        <div class="detail-section">
-          <div class="detail-section-title">HistÃ³rico mensal</div>
-          ${monthRows || '<div class="empty-msg">Nenhuma receita lanÃ§ada ainda.</div>'}
-        </div>
+      <div style="text-align:right">
+        <div style="font-size:20px;font-weight:500;color:${c.roi>=0?'#15803d':'#dc2626'};font-family:'DM Mono',monospace">${c.roi!==null?fmtPct(c.roi):'N/A'}</div>
+        <div style="font-size:11px;color:#9ca3af">ROI</div>
+        <i class="ti ti-chevron-down" style="font-size:16px;color:#9ca3af;margin-top:4px"></i>
       </div>
-    </div>`;
+    </div>
+    <div class="car-body">
+      <div class="detail-section">
+        <div class="detail-section-title">Resumo acumulado</div>
+        <div class="drow"><span class="dlabel">Valor investido</span><span class="dval blue">${fmt(c.invested)}</span></div>
+        <div class="drow"><span class="dlabel">Receita bruta total</span><span class="dval">${fmt(c.totalBruto)}</span></div>
+        <div class="drow"><span class="dlabel">(-) GestÃ£o de frota 25%</span><span class="dval neg">-${fmt(c.adm)}</span></div>
+        <div class="drow"><span class="dlabel">(-) Seguro (${c.n} Ã— $52.00)</span><span class="dval neg">-${fmt(c.seg)}</span></div>
+        <div class="drow"><span class="dlabel">(-) Rastreador (${c.n} Ã— $7.75)</span><span class="dval neg">-${fmt(c.rast)}</span></div>
+        ${c.totalManut>0?`<div class="drow"><span class="dlabel">(-) ManutenÃ§Ãµes</span><span class="dval neg">-${fmt(c.totalManut)}</span></div>`:''}
+        <div class="drow total-row"><span class="dlabel">Retorno lÃ­quido total</span><span class="dval ${c.liquida>=0?'pos':'neg'}">${c.liquida>=0?'':'-'}${fmt(c.liquida)}</span></div>
+      </div>
+      <div class="detail-section"><div class="detail-section-title">HistÃ³rico mensal</div>${monthRows||'<div class="empty-msg">Nenhuma receita lanÃ§ada ainda.</div>'}</div>
+    </div></div>`;
 }
 
-// â”€â”€ AUTH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function setRole(r) {
   currentRole = r;
-  document.getElementById('tab-investor').className = 'role-tab' + (r==='investor' ? ' active' : '');
-  document.getElementById('tab-admin').className = 'role-tab' + (r==='admin' ? ' active' : '');
+  document.getElementById('tab-investor').className = 'role-tab'+(r==='investor'?' active':'');
+  document.getElementById('tab-admin').className = 'role-tab'+(r==='admin'?' active':'');
 }
 
 async function doLogin() {
   const u = document.getElementById('login-user').value.trim().toLowerCase();
   const p = document.getElementById('login-pass').value;
   const err = document.getElementById('login-err');
-  showLoading(true);
+  const btn = document.getElementById('login-btn');
+  btn.textContent = 'Entrando...'; btn.disabled = true;
   await loadAll();
-  showLoading(false);
-  const user = STATE.users.find(x => x.username === u && x.password === p && x.role === currentRole);
-  if (!user) { err.style.display = 'block'; return; }
+  btn.textContent = 'Entrar'; btn.disabled = false;
+  const user = STATE.users.find(x => x.username===u && x.password===p && x.role===currentRole);
+  if (!user) { err.style.display='block'; return; }
   err.style.display = 'none';
   currentUser = u;
-  user.role === 'admin' ? showAdmin() : showInvestor(user);
+  user.role==='admin' ? showAdmin() : showInvestor(user);
   startRealtimeSync();
 }
 
 function logout() {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-login').classList.add('active');
-  document.getElementById('login-user').value = '';
-  document.getElementById('login-pass').value = '';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
   currentUser = null;
+  openCarNames.clear();
 }
 
-function showLoading(show) {
-  document.getElementById('login-btn').textContent = show ? 'Entrando...' : 'Entrar';
-  document.getElementById('login-btn').disabled = show;
-}
-
-// â”€â”€ INVESTOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showInvestor(user) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-investor').classList.add('active');
   document.getElementById('inv-topname').textContent = user.name;
-  document.getElementById('inv-topsub').textContent = user.cars.length + ' veÃ­culo(s)';
+  document.getElementById('inv-topsub').textContent = user.cars.length+' veÃ­culo(s)';
   renderInvestorStats(user);
   document.getElementById('inv-cars').innerHTML = user.cars.map(buildCarCard).join('');
 }
 
 function renderInvestorStats(user) {
-  let ti = 0, tl = 0;
-  user.cars.forEach(cn => { const c = calcCar(cn); if (c) { ti += c.invested; tl += c.liquida; } });
-  const roi = ti > 0 ? tl / ti : 0;
+  let ti=0, tl=0;
+  user.cars.forEach(cn=>{const c=calcCar(cn);if(c){ti+=c.invested;tl+=c.liquida;}});
+  const roi = ti>0?tl/ti:0;
   document.getElementById('inv-stats').innerHTML = `
     <div class="stat-card"><div class="stat-label">Total investido</div><div class="stat-val blue">${fmt(ti)}</div></div>
     <div class="stat-card"><div class="stat-label">Retorno lÃ­quido</div><div class="stat-val ${tl>=0?'green':'red'}">${fmt(tl)}</div></div>
     <div class="stat-card"><div class="stat-label">ROI acumulado</div><div class="stat-val ${roi>=0?'green':'red'}">${fmtPct(roi)}</div></div>`;
 }
 
-// â”€â”€ ADMIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showAdmin() {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-admin').classList.add('active');
-  renderAdminStats(); renderAdminCars(); renderUserList(); renderInvList();
-  populateSelects(); updatePreview(); updateManutPreview();
+  renderAdminStats(); renderAdminCars(); renderUserList(); renderInvList(); populateSelects();
 }
 
 function renderAdminStats() {
-  let ti=0, tl=0, tb=0;
-  STATE.cars.forEach(car => { const c=calcCar(car.name); if(c){ti+=c.invested;tl+=c.liquida;tb+=c.totalBruto;} });
+  let ti=0,tl=0,tb=0;
+  STATE.cars.forEach(car=>{const c=calcCar(car.name);if(c){ti+=c.invested;tl+=c.liquida;tb+=c.totalBruto;}});
   document.getElementById('admin-stats').innerHTML = `
     <div class="stat-card"><div class="stat-label">Total investido</div><div class="stat-val blue">${fmt(ti)}</div></div>
     <div class="stat-card"><div class="stat-label">Receita bruta</div><div class="stat-val">${fmt(tb)}</div></div>
@@ -272,21 +212,20 @@ function renderAdminStats() {
 }
 
 function renderAdminCars() {
-  document.getElementById('admin-cars').innerHTML = STATE.cars.map(c => buildCarCard(c.name)).join('');
+  document.getElementById('admin-cars').innerHTML = STATE.cars.map(c=>buildCarCard(c.name)).join('');
 }
 
-// â”€â”€ LANÃ‡AR RECEITA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ RECEITA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function updatePreview() {
   const cn = document.getElementById('f-car').value;
-  const bruto = parseFloat(document.getElementById('f-bruto').value) || 0;
+  const bruto = parseFloat(document.getElementById('f-bruto').value)||0;
   const month = document.getElementById('f-month').value;
   const el = document.getElementById('preview-content');
-  if (!cn || bruto === 0) { el.className='preview-empty'; el.textContent='Preencha o veÃ­culo e a receita bruta para ver a prÃ©via.'; return; }
-  el.className = '';
-  const adm = bruto*0.25, liq = bruto-adm-52-7.75;
-  const c = calcCar(cn), newLiq = (c?c.liquida:0)+liq, newRoi = c&&c.invested>0?newLiq/c.invested:null;
-  el.innerHTML = `
-    <div style="font-size:14px;font-weight:500;color:#1a1a2e;margin-bottom:10px">${cn} â€” ${month?mlabel(month):'â€”'}</div>
+  if (!cn||bruto===0){el.className='preview-empty';el.textContent='Preencha o veÃ­culo e a receita bruta para ver a prÃ©via.';return;}
+  el.className='';
+  const adm=bruto*0.25, liq=bruto-adm-52-7.75;
+  const c=calcCar(cn), newLiq=(c?c.liquida:0)+liq, newRoi=c&&c.invested>0?newLiq/c.invested:null;
+  el.innerHTML=`<div style="font-size:14px;font-weight:500;color:#1a1a2e;margin-bottom:10px">${cn} â€” ${month?mlabel(month):'â€”'}</div>
     <div class="prow"><span>Receita bruta</span><span>${fmt(bruto)}</span></div>
     <div class="prow"><span>(-) GestÃ£o 25%</span><span style="color:#dc2626">-${fmt(adm)}</span></div>
     <div class="prow"><span>(-) Seguro</span><span style="color:#dc2626">-$52.00</span></div>
@@ -300,42 +239,76 @@ function updatePreview() {
 }
 
 async function lancarReceita() {
-  const cn = document.getElementById('f-car').value;
-  const month = document.getElementById('f-month').value;
-  const bruto = parseFloat(document.getElementById('f-bruto').value) || 0;
-  if (!month || bruto === 0) return;
-  const existing = STATE.months.find(m => m.car_name === cn && m.month === month);
-  if (existing) {
-    await sbPatch('months', `car_name=eq.${encodeURIComponent(cn)}&month=eq.${month}`, { bruto });
-  } else {
-    await sbPost('months', { car_name: cn, month, bruto });
-  }
-  document.getElementById('f-bruto').value = '';
+  const cn=document.getElementById('f-car').value;
+  const month=document.getElementById('f-month').value;
+  const bruto=parseFloat(document.getElementById('f-bruto').value)||0;
+  if(!month||bruto===0)return;
+  const existing=STATE.months.find(m=>m.car_name===cn&&m.month===month);
+  if(existing){await sbPatch('months',`car_name=eq.${encodeURIComponent(cn)}&month=eq.${month}`,{bruto});}
+  else{await sbPost('months',{car_name:cn,month,bruto});}
+  document.getElementById('f-bruto').value='';
   await loadAll();
-  const ok = document.getElementById('save-ok-r'); ok.style.display='block'; setTimeout(()=>ok.style.display='none',2500);
-  updatePreview(); renderAdminStats(); renderAdminCars(); refreshCurrentView();
+  const ok=document.getElementById('save-ok-r');ok.style.display='block';setTimeout(()=>ok.style.display='none',2500);
+  updatePreview(); renderReceitaList(); renderAdminStats(); renderAdminCars(); refreshCurrentView();
+}
+
+function renderReceitaList() {
+  const el = document.getElementById('receita-saved-list');
+  if (!el) return;
+  const cn = document.getElementById('f-car').value;
+  const all = STATE.months.filter(m=>m.car_name===cn).sort((a,b)=>a.month.localeCompare(b.month));
+  if (all.length===0){el.innerHTML='<div class="empty-msg">Nenhuma receita lanÃ§ada para este veÃ­culo.</div>';return;}
+  el.innerHTML = all.map((item,i)=>`
+    <div class="manut-saved-item" style="background:#f0f9ff;border-color:#bae6fd;margin-bottom:8px">
+      <div class="manut-saved-top">
+        <div class="manut-saved-info">
+          <div class="manut-saved-name" style="color:#0369a1"><i class="ti ti-calendar"></i> ${mlabel(item.month)}</div>
+          <div class="manut-saved-sub">Receita bruta registrada</div>
+        </div>
+        <span class="manut-saved-val" style="color:#0369a1">${fmt(item.bruto)}</span>
+      </div>
+      <div class="manut-saved-actions">
+        <button class="btn-edit" onclick="toggleEditReceita(${i})"><i class="ti ti-edit"></i> Editar valor</button>
+      </div>
+      <div class="edit-inline" id="redit-${i}">
+        <div class="edit-row">
+          <input type="number" id="redit-val-${i}" value="${item.bruto}" step="0.01" min="0" placeholder="Novo valor ($)"/>
+          <button class="btn-save-edit" onclick="saveEditReceita('${item.id}','${item.car_name}','${item.month}',${i})"><i class="ti ti-check"></i> Salvar</button>
+          <button class="btn-cancel-edit" onclick="toggleEditReceita(${i})">Cancelar</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleEditReceita(i) { document.getElementById('redit-'+i).classList.toggle('open'); }
+
+async function saveEditReceita(id, carName, month, i) {
+  const newVal = parseFloat(document.getElementById('redit-val-'+i).value)||0;
+  if (newVal===0)return;
+  await sbPatch('months',`id=eq.${id}`,{bruto:newVal});
+  await loadAll();
+  renderReceitaList(); updatePreview(); renderAdminStats(); renderAdminCars(); refreshCurrentView();
 }
 
 // â”€â”€ MANUTENÃ‡ÃƒO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function updateManutPreview() {
-  const cn = document.getElementById('m-car').value;
-  const ym = document.getElementById('m-month').value;
-  const valor = parseFloat(document.getElementById('m-valor').value) || 0;
-  const desc = document.getElementById('m-desc') ? document.getElementById('m-desc').value.trim() : '';
-  const el = document.getElementById('manut-preview');
-  if (!cn || !ym || valor === 0) { el.className='preview-empty'; el.textContent='Preencha todos os campos para ver a prÃ©via.'; return; }
-  el.className = '';
-  const c = calcCar(cn);
-  const mo = STATE.months.find(m => m.car_name === cn && m.month === ym);
-  const manuts = STATE.maintenances.filter(m => m.car_name === cn && m.month === ym);
-  const totalManut = manuts.reduce((s,x)=>s+x.value,0);
-  const liqAtual = mo ? mo.bruto-(mo.bruto*0.25)-52-7.75-totalManut : null;
-  const liqApos = liqAtual !== null ? liqAtual - valor : null;
-  const newTotalLiq = (c?c.liquida:0) - valor;
-  const newRoi = c&&c.invested>0 ? newTotalLiq/c.invested : null;
-  const warnDesc = !desc ? `<div style="color:#92400e;font-size:12px;margin-top:8px"><i class="ti ti-alert-triangle"></i> Digite o tipo de serviÃ§o para salvar.</div>` : '';
-  el.innerHTML = `
-    <div style="font-size:14px;font-weight:500;color:#1a1a2e;margin-bottom:10px">${cn} â€” ${mlabel(ym)}</div>
+  const cn=document.getElementById('m-car').value;
+  const ym=document.getElementById('m-month').value;
+  const valor=parseFloat(document.getElementById('m-valor').value)||0;
+  const desc=document.getElementById('m-desc')?document.getElementById('m-desc').value.trim():'';
+  const el=document.getElementById('manut-preview');
+  if(!cn||!ym||valor===0){el.className='preview-empty';el.textContent='Preencha todos os campos para ver a prÃ©via.';return;}
+  el.className='';
+  const c=calcCar(cn);
+  const mo=STATE.months.find(m=>m.car_name===cn&&m.month===ym);
+  const manuts=STATE.maintenances.filter(m=>m.car_name===cn&&m.month===ym);
+  const totalManut=manuts.reduce((s,x)=>s+x.value,0);
+  const liqAtual=mo?mo.bruto-(mo.bruto*0.25)-52-7.75-totalManut:null;
+  const liqApos=liqAtual!==null?liqAtual-valor:null;
+  const newTotalLiq=(c?c.liquida:0)-valor;
+  const newRoi=c&&c.invested>0?newTotalLiq/c.invested:null;
+  const warnDesc=!desc?`<div style="color:#92400e;font-size:12px;margin-top:8px"><i class="ti ti-alert-triangle"></i> Digite o tipo de serviÃ§o para salvar.</div>`:'';
+  el.innerHTML=`<div style="font-size:14px;font-weight:500;color:#1a1a2e;margin-bottom:10px">${cn} â€” ${mlabel(ym)}</div>
     <div class="prow"><span>ServiÃ§o</span><span>${desc||'â€”'}</span></div>
     <div class="prow"><span>Valor</span><span style="color:#dc2626">-${fmt(valor)}</span></div>
     ${liqAtual!==null?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid #eef0f5">
@@ -349,27 +322,27 @@ function updateManutPreview() {
 }
 
 async function lancarManut() {
-  const cn = document.getElementById('m-car').value;
-  const ym = document.getElementById('m-month').value;
-  const valor = parseFloat(document.getElementById('m-valor').value) || 0;
-  const desc = document.getElementById('m-desc').value.trim();
-  const errEl = document.getElementById('save-err-m');
-  if (!desc) { errEl.style.display='block'; setTimeout(()=>errEl.style.display='none',3000); return; }
-  if (!ym || valor === 0) return;
-  await sbPost('maintenances', { car_name: cn, month: ym, description: desc, value: valor });
-  document.getElementById('m-valor').value = '';
-  document.getElementById('m-desc').value = '';
+  const cn=document.getElementById('m-car').value;
+  const ym=document.getElementById('m-month').value;
+  const valor=parseFloat(document.getElementById('m-valor').value)||0;
+  const desc=document.getElementById('m-desc').value.trim();
+  const errEl=document.getElementById('save-err-m');
+  if(!desc){errEl.style.display='block';setTimeout(()=>errEl.style.display='none',3000);return;}
+  if(!ym||valor===0)return;
+  await sbPost('maintenances',{car_name:cn,month:ym,description:desc,value:valor});
+  document.getElementById('m-valor').value='';
+  document.getElementById('m-desc').value='';
   await loadAll();
-  const ok = document.getElementById('save-ok-m'); ok.style.display='block'; setTimeout(()=>ok.style.display='none',2500);
+  const ok=document.getElementById('save-ok-m');ok.style.display='block';setTimeout(()=>ok.style.display='none',2500);
   renderManutList(); updateManutPreview(); renderAdminStats(); renderAdminCars(); refreshCurrentView();
 }
 
-async function renderManutList() {
-  const cn = document.getElementById('m-car').value;
-  const el = document.getElementById('manut-saved-list');
-  const all = STATE.maintenances.filter(m => m.car_name === cn);
-  if (all.length === 0) { el.innerHTML='<div class="empty-msg">Nenhuma manutenÃ§Ã£o lanÃ§ada para este veÃ­culo.</div>'; return; }
-  el.innerHTML = '<div class="manut-saved-list">' + all.map((item, i) => `
+function renderManutList() {
+  const cn=document.getElementById('m-car').value;
+  const el=document.getElementById('manut-saved-list');
+  const all=STATE.maintenances.filter(m=>m.car_name===cn);
+  if(all.length===0){el.innerHTML='<div class="empty-msg">Nenhuma manutenÃ§Ã£o lanÃ§ada para este veÃ­culo.</div>';return;}
+  el.innerHTML=all.map((item,i)=>`
     <div class="manut-saved-item" id="msi-${i}">
       <div class="manut-saved-top">
         <div class="manut-saved-info">
@@ -390,30 +363,30 @@ async function renderManutList() {
           <button class="btn-cancel-edit" onclick="toggleEditManut(${i})">Cancelar</button>
         </div>
       </div>
-    </div>`).join('') + '</div>';
+    </div>`).join('');
 }
 
-function toggleEditManut(i) { document.getElementById('edit-'+i).classList.toggle('open'); }
+function toggleEditManut(i){document.getElementById('edit-'+i).classList.toggle('open');}
 
-async function saveEditManut(id, i) {
-  const newDesc = document.getElementById('edit-desc-'+i).value.trim();
-  const newVal = parseFloat(document.getElementById('edit-val-'+i).value) || 0;
-  if (!newDesc || newVal === 0) return;
-  await sbPatch('maintenances', `id=eq.${id}`, { description: newDesc, value: newVal });
+async function saveEditManut(id,i) {
+  const newDesc=document.getElementById('edit-desc-'+i).value.trim();
+  const newVal=parseFloat(document.getElementById('edit-val-'+i).value)||0;
+  if(!newDesc||newVal===0)return;
+  await sbPatch('maintenances',`id=eq.${id}`,{description:newDesc,value:newVal});
   await loadAll();
   renderManutList(); renderAdminStats(); renderAdminCars(); updateManutPreview(); refreshCurrentView();
 }
 
 async function deleteManut(id) {
-  if (!confirm('Apagar esta manutenÃ§Ã£o?')) return;
-  await sbDelete('maintenances', `id=eq.${id}`);
+  if(!confirm('Apagar esta manutenÃ§Ã£o?'))return;
+  await sbDelete('maintenances',`id=eq.${id}`);
   await loadAll();
   renderManutList(); renderAdminStats(); renderAdminCars(); updateManutPreview(); refreshCurrentView();
 }
 
 // â”€â”€ USUÃRIOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderUserList() {
-  document.getElementById('user-list').innerHTML = STATE.users.map((data, i) => `
+  document.getElementById('user-list').innerHTML=STATE.users.map((data,i)=>`
     <div class="user-card">
       <div class="user-card-top">
         <div>
@@ -433,99 +406,57 @@ function renderUserList() {
     </div>`).join('');
 }
 
-function togglePass(i) { document.getElementById('pass-'+i).classList.toggle('open'); }
+function togglePass(i){document.getElementById('pass-'+i).classList.toggle('open');}
 
-async function savePass(id, i) {
-  const newPass = document.getElementById('new-pass-'+i).value.trim();
-  if (!newPass || newPass.length < 6) { alert('A senha deve ter pelo menos 6 caracteres.'); return; }
-  await sbPatch('users', `id=eq.${id}`, { password: newPass });
+async function savePass(id,i) {
+  const newPass=document.getElementById('new-pass-'+i).value.trim();
+  if(!newPass||newPass.length<6){alert('A senha deve ter pelo menos 6 caracteres.');return;}
+  await sbPatch('users',`id=eq.${id}`,{password:newPass});
   await loadAll();
-  document.getElementById('new-pass-'+i).value = '';
-  const ok = document.getElementById('pass-ok-'+i);
-  ok.style.display = 'block';
-  setTimeout(() => { ok.style.display='none'; togglePass(i); }, 2000);
+  document.getElementById('new-pass-'+i).value='';
+  const ok=document.getElementById('pass-ok-'+i);ok.style.display='block';
+  setTimeout(()=>{ok.style.display='none';togglePass(i);},2000);
 }
 
 function renderInvList() {
-  document.getElementById('inv-list').innerHTML = STATE.users
-    .filter(d => d.role==='investor')
-    .map(d => `<tr><td>${d.name}</td><td style="color:#9ca3af">${d.username}</td><td>${(d.cars||[]).join(', ')}</td></tr>`)
-    .join('');
+  document.getElementById('inv-list').innerHTML=STATE.users.filter(d=>d.role==='investor')
+    .map(d=>`<tr><td>${d.name}</td><td style="color:#9ca3af">${d.username}</td><td>${(d.cars||[]).join(', ')}</td></tr>`).join('');
 }
 
 // â”€â”€ SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function populateSelects() {
-  const opts = STATE.cars.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-  document.getElementById('f-car').innerHTML = opts;
-  if(document.getElementById('f-car')) document.getElementById('f-car').onchange = function(){ updatePreview(); renderReceitaList(); };
-  document.getElementById('m-car').innerHTML = opts;
-  const now = new Date();
-  const ym = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  document.getElementById('f-month').value = ym;
-  document.getElementById('m-month').value = ym;
+  const opts=STATE.cars.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  document.getElementById('f-car').innerHTML=opts;
+  document.getElementById('m-car').innerHTML=opts;
+  const now=new Date();
+  const ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('f-month').value=ym;
+  document.getElementById('m-month').value=ym;
+  document.getElementById('f-car').onchange = function(){ updatePreview(); renderReceitaList(); };
   renderManutList();
   renderReceitaList();
-}
-
-function renderReceitaList() {
-  const cn = document.getElementById('f-car') ? document.getElementById('f-car').value : '';
-  const el = document.getElementById('receita-saved-list');
-  if (!el) return;
-  const all = STATE.months.filter(m => m.car_name === cn).sort((a,b) => a.month.localeCompare(b.month));
-  if (all.length === 0) { el.innerHTML='<div class="empty-msg">Nenhuma receita lanÃ§ada para este veÃ­culo.</div>'; return; }
-  el.innerHTML = '<div class="manut-saved-list">' + all.map((item, i) => `
-    <div class="manut-saved-item" id="rsi-${i}" style="background:#f0f9ff;border-color:#bae6fd">
-      <div class="manut-saved-top">
-        <div class="manut-saved-info">
-          <div class="manut-saved-name" style="color:#0369a1"><i class="ti ti-cash"></i> ${mlabel(item.month)}</div>
-          <div class="manut-saved-sub">Receita bruta: ${fmt(item.bruto)}</div>
-        </div>
-        <span class="manut-saved-val" style="color:#0369a1">${fmt(item.bruto)}</span>
-      </div>
-      <div class="manut-saved-actions">
-        <button class="btn-edit" onclick="toggleEditReceita(${i})"><i class="ti ti-edit"></i> Editar</button>
-      </div>
-      <div class="edit-inline" id="redit-${i}">
-        <div class="edit-row">
-          <input type="number" id="redit-val-${i}" value="${item.bruto}" step="0.01" min="0" placeholder="Novo valor ($)"/>
-          <button class="btn-save-edit" onclick="saveEditReceita('${item.id}',${i})"><i class="ti ti-check"></i> Salvar</button>
-          <button class="btn-cancel-edit" onclick="toggleEditReceita(${i})">Cancelar</button>
-        </div>
-      </div>
-    </div>`).join('') + '</div>';
-}
-
-function toggleEditReceita(i) { document.getElementById('redit-'+i).classList.toggle('open'); }
-
-async function saveEditReceita(id, i) {
-  const newVal = parseFloat(document.getElementById('redit-val-'+i).value) || 0;
-  if (newVal === 0) return;
-  await sbPatch('months', `id=eq.${id}`, { bruto: newVal });
-  await loadAll();
-  renderReceitaList(); updatePreview(); renderAdminStats(); renderAdminCars(); refreshCurrentView();
-  const el = document.getElementById('redit-'+i);
-  if (el) el.classList.remove('open');
+  updatePreview();
+  updateManutPreview();
 }
 
 function toggleCar(header) {
-  const body = header.nextElementSibling;
-  const isOpen = body.classList.contains('open');
+  const body=header.nextElementSibling;
   body.classList.toggle('open');
-  // Store open state in dataset
-  const carName = header.querySelector('.car-name');
-  if (carName) {
-    if (!isOpen) openCarNames.add(carName.textContent);
-    else openCarNames.delete(carName.textContent);
+  const name=header.querySelector('.car-name');
+  if(name){
+    if(body.classList.contains('open')) openCarNames.add(name.textContent);
+    else openCarNames.delete(name.textContent);
   }
 }
 
 function showAdminTab(tab) {
-  const ids = ['visao','lancar','usuarios'];
-  document.querySelectorAll('.atab').forEach((t,i) => { t.className = 'atab'+(ids[i]===tab?' active':''); });
-  ids.forEach(id => { document.getElementById('atab-'+id).className = 'atab-content'+(id===tab?' active':''); });
+  const ids=['visao','lancar','usuarios'];
+  document.querySelectorAll('.atab').forEach((t,i)=>{t.className='atab'+(ids[i]===tab?' active':'');});
+  ids.forEach(id=>{document.getElementById('atab-'+id).className='atab-content'+(id===tab?' active':'');});
 }
 
 function showSubTab(tab) {
-  ['receita','manut'].forEach(id => { document.getElementById('sub-'+id).className = 'sub-content'+(id===tab?' active':''); });
-  document.querySelectorAll('.stab').forEach((t,i) => { t.className = 'stab'+(['receita','manut'][i]===tab?' active':''); });
-  if (tab === 'manut') renderManutList();
+  ['receita','manut'].forEach(id=>{document.getElementById('sub-'+id).className='sub-content'+(id===tab?' active':'');});
+  document.querySelectorAll('.stab').forEach((t,i)=>{t.className='stab'+(['receita','manut'][i]===tab?' active':'');});
+  if(tab==='manut') renderManutList();
+  if(tab==='receita') renderReceitaList();

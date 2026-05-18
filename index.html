@@ -1,126 +1,41 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Dimdan Cars — Portal do Investidor</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div id="app">
 
-  <!-- LOGIN -->
-  <div id="screen-login" class="screen active">
-    <div class="login-wrap">
-      <div class="logo-box">
-        <div class="logo-icon"><i class="ti ti-car"></i></div>
-        <div class="logo-title">Dimdan Cars</div>
-        <div class="logo-sub">Portal do Investidor</div>
-      </div>
-      <div class="login-card">
-        <div class="role-tabs">
-          <div class="role-tab active" onclick="setRole('investor')" id="tab-investor"><i class="ti ti-user"></i> Investidor</div>
-          <div class="role-tab" onclick="setRole('admin')" id="tab-admin"><i class="ti ti-settings"></i> Admin</div>
-        </div>
-        <label>Usuário</label>
-        <input type="text" id="login-user" placeholder="seu usuário"/>
-        <label>Senha</label>
-        <input type="password" id="login-pass" placeholder="••••••••"/>
-        <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
-        <div class="login-error" id="login-err">Usuário ou senha incorretos.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- INVESTOR -->
-  <div id="screen-investor" class="screen">
-    <div class="topbar">
-      <div class="topbar-left"><i class="ti ti-car"></i>
-        <div><div class="topbar-title" id="inv-topname">Portal</div><div class="topbar-sub" id="inv-topsub">Meu portfólio</div></div>
-      </div>
-      <button class="topbar-logout" onclick="logout()"><i class="ti ti-logout"></i> Sair</button>
-    </div>
-    <div class="content">
-      <div class="stat-grid" id="inv-stats"></div>
-      <div class="section-title">Meus veículos</div>
-      <div id="inv-cars"></div>
-    </div>
-  </div>
-
-  <!-- ADMIN -->
-  <div id="screen-admin" class="screen">
-    <div class="topbar">
-      <div class="topbar-left"><i class="ti ti-settings"></i>
-        <div><div class="topbar-title">Dimdan Cars — Admin</div><div class="topbar-sub">Painel de gerenciamento</div></div>
-      </div>
-      <button class="topbar-logout" onclick="logout()"><i class="ti ti-logout"></i> Sair</button>
-    </div>
-    <div class="content">
-      <div class="admin-tabs">
-        <div class="atab active" onclick="showAdminTab('visao')">Visão geral</div>
-        <div class="atab" onclick="showAdminTab('lancar')">Lançamentos</div>
-        <div class="atab" onclick="showAdminTab('usuarios')">Usuários</div>
-      </div>
-
-      <div class="atab-content active" id="atab-visao">
-        <div class="stat-grid" id="admin-stats"></div>
-        <div class="section-title">Todos os veículos</div>
-        <div id="admin-cars"></div>
-      </div>
-
-      <div class="atab-content" id="atab-lancar">
-        <div class="tab-sub">
-          <div class="stab active" onclick="showSubTab('receita')"><i class="ti ti-cash"></i> Receita mensal</div>
-          <div class="stab" onclick="showSubTab('manut')"><i class="ti ti-tool"></i> Manutenção</div>
-        </div>
-        <div class="sub-content active" id="sub-receita">
-          <div class="form-row"><label>Veículo</label><select id="f-car" onchange="updatePreview()"></select></div>
-          <div class="form-grid">
-            <div class="form-row"><label>Mês / Ano</label><input type="month" id="f-month" onchange="updatePreview()"/></div>
-            <div class="form-row"><label>Receita bruta ($)</label><input type="number" id="f-bruto" placeholder="0.00" step="0.01" min="0" oninput="updatePreview()"/></div>
-          </div>
-          <div class="preview-box">
-            <div class="preview-title"><i class="ti ti-eye"></i> Prévia</div>
-            <div id="preview-content" class="preview-empty">Preencha o veículo e a receita bruta para ver a prévia.</div>
-          </div>
-          <button class="save-btn" onclick="lancarReceita()"><i class="ti ti-check"></i> Salvar receita</button>
-          <div class="success-msg" id="save-ok-r"><i class="ti ti-circle-check"></i> Receita salva!</div>
-        </div>
-        <div class="sub-content" id="sub-manut">
-          <div class="form-row"><label>Veículo</label><select id="m-car" onchange="updateManutPreview();renderManutList()"></select></div>
-          <div class="form-grid">
-            <div class="form-row"><label>Mês / Ano</label><input type="month" id="m-month" onchange="updateManutPreview()"/></div>
-            <div class="form-row"><label>Valor ($) <span class="req">*</span></label><input type="number" id="m-valor" placeholder="0.00" step="0.01" min="0" oninput="updateManutPreview()"/></div>
-          </div>
-          <div class="form-row"><label>Tipo / Serviço realizado <span class="req">*</span></label><input type="text" id="m-desc" placeholder="ex: troca de óleo, pastilhas de freio..."/></div>
-          <div class="preview-box">
-            <div class="preview-title"><i class="ti ti-eye"></i> Prévia</div>
-            <div id="manut-preview" class="preview-empty">Preencha os campos para ver a prévia.</div>
-          </div>
-          <button class="save-btn" onclick="lancarManut()"><i class="ti ti-check"></i> Salvar manutenção</button>
-          <div class="success-msg" id="save-ok-m"><i class="ti ti-circle-check"></i> Manutenção salva!</div>
-          <div class="err-msg" id="save-err-m"><i class="ti ti-alert-triangle"></i> Preencha o tipo de serviço antes de salvar.</div>
-          <div class="section-title" style="margin-top:1.5rem">Manutenções salvas</div>
-          <div id="manut-saved-list"></div>
-        </div>
-      </div>
-
-      <div class="atab-content" id="atab-usuarios">
-        <div class="section-title">Gerenciar senhas</div>
-        <div id="user-list"></div>
-        <div class="section-title" style="margin-top:1.5rem">Investidores</div>
-        <table class="inv-table">
-          <thead><tr><th>Nome</th><th>Usuário</th><th>Veículo(s)</th></tr></thead>
-          <tbody id="inv-list"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-</div>
-<script src="app.js"></script>
-</body>
-</html>
+Dimdan Cars
+Portal do Investidor
+ Investidor
+ Admin
+Usuário   Senha    Entrar
+Usuário ou senha incorretos.
+Portal
+Meu portfólio
+ Sair
+Meus veículos
+Dimdan Cars — Admin
+Painel de gerenciamento
+ Sair
+Visão geral
+Lançamentos
+Usuários
+Todos os veículos
+ Receita mensal
+ Manutenção
+Veículo
+Mês / Ano
+Receita bruta ($)
+ Prévia
+Preencha o veículo e a receita bruta para ver a prévia.
+ Salvar receita
+ Receita salva!
+Receitas salvas
+Veículo
+Mês / Ano
+Valor ($) *
+Tipo / Serviço realizado *
+ Prévia
+Preencha os campos para ver a prévia.
+ Salvar manutenção
+ Manutenção salva!
+ Preencha o tipo de serviço antes de salvar.
+Manutenções salvas
+Gerenciar senhas
+Investidores
+Nome	Usuário	Veículo(s)

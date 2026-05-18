@@ -457,12 +457,54 @@ function renderInvList() {
 function populateSelects() {
   const opts = STATE.cars.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
   document.getElementById('f-car').innerHTML = opts;
+  if(document.getElementById('f-car')) document.getElementById('f-car').onchange = function(){ updatePreview(); renderReceitaList(); };
   document.getElementById('m-car').innerHTML = opts;
   const now = new Date();
   const ym = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   document.getElementById('f-month').value = ym;
   document.getElementById('m-month').value = ym;
   renderManutList();
+  renderReceitaList();
+}
+
+function renderReceitaList() {
+  const cn = document.getElementById('f-car') ? document.getElementById('f-car').value : '';
+  const el = document.getElementById('receita-saved-list');
+  if (!el) return;
+  const all = STATE.months.filter(m => m.car_name === cn).sort((a,b) => a.month.localeCompare(b.month));
+  if (all.length === 0) { el.innerHTML='<div class="empty-msg">Nenhuma receita lanÃ§ada para este veÃ­culo.</div>'; return; }
+  el.innerHTML = '<div class="manut-saved-list">' + all.map((item, i) => `
+    <div class="manut-saved-item" id="rsi-${i}" style="background:#f0f9ff;border-color:#bae6fd">
+      <div class="manut-saved-top">
+        <div class="manut-saved-info">
+          <div class="manut-saved-name" style="color:#0369a1"><i class="ti ti-cash"></i> ${mlabel(item.month)}</div>
+          <div class="manut-saved-sub">Receita bruta: ${fmt(item.bruto)}</div>
+        </div>
+        <span class="manut-saved-val" style="color:#0369a1">${fmt(item.bruto)}</span>
+      </div>
+      <div class="manut-saved-actions">
+        <button class="btn-edit" onclick="toggleEditReceita(${i})"><i class="ti ti-edit"></i> Editar</button>
+      </div>
+      <div class="edit-inline" id="redit-${i}">
+        <div class="edit-row">
+          <input type="number" id="redit-val-${i}" value="${item.bruto}" step="0.01" min="0" placeholder="Novo valor ($)"/>
+          <button class="btn-save-edit" onclick="saveEditReceita('${item.id}',${i})"><i class="ti ti-check"></i> Salvar</button>
+          <button class="btn-cancel-edit" onclick="toggleEditReceita(${i})">Cancelar</button>
+        </div>
+      </div>
+    </div>`).join('') + '</div>';
+}
+
+function toggleEditReceita(i) { document.getElementById('redit-'+i).classList.toggle('open'); }
+
+async function saveEditReceita(id, i) {
+  const newVal = parseFloat(document.getElementById('redit-val-'+i).value) || 0;
+  if (newVal === 0) return;
+  await sbPatch('months', `id=eq.${id}`, { bruto: newVal });
+  await loadAll();
+  renderReceitaList(); updatePreview(); renderAdminStats(); renderAdminCars(); refreshCurrentView();
+  const el = document.getElementById('redit-'+i);
+  if (el) el.classList.remove('open');
 }
 
 function toggleCar(header) {
@@ -487,4 +529,3 @@ function showSubTab(tab) {
   ['receita','manut'].forEach(id => { document.getElementById('sub-'+id).className = 'sub-content'+(id===tab?' active':''); });
   document.querySelectorAll('.stab').forEach((t,i) => { t.className = 'stab'+(['receita','manut'][i]===tab?' active':''); });
   if (tab === 'manut') renderManutList();
-}
